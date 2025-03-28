@@ -13,6 +13,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="GANTZ Timer">
   <meta name="theme-color" content="#000000">
+  <!-- Android用マニフェストファイルの参照 -->
+  <link rel="manifest" href="manifest.json">
   
   <style>
     body { 
@@ -36,5 +38,18 @@
   <link rel="stylesheet" href="style.css" />
   <script src="script.js" defer></script>
   <script src="sphere.js"></script>
+  
+  <!-- Service Worker登録 -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(registration => {
+          console.log('Service Workerが登録されました:', registration.scope);
+        }).catch(error => {
+          console.log('Service Workerの登録に失敗しました:', error);
+        });
+      });
+    }
+  </script>
 </body>
 </html>
