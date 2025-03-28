@@ -1,6 +1,6 @@
 {
-  "name": "GANTZ Timer",
-  "short_name": "GANTZ",
+  "name": "sphere Timer",
+  "short_name": "sphere",
   "description": "黒い球体タイマー",
   "start_url": "/",
   "display": "standalone",
