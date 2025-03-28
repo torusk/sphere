@@ -416,11 +416,122 @@ timerMesh = {
   context: timerObject.context
 };
 
+// タイマー音声の準備
+let timerAudio = null;
+let audioInitialized = false;
+let hasPlayedSound = false;
+
+// Android向け音声再生機能
+
+// オーディオの初期化
+function initAudio() {
+  if (audioInitialized) return true;
+  
+  try {
+    // HTMLに設定したAudio要素を取得
+    timerAudio = document.getElementById('timerSound');
+    
+    if (!timerAudio) {
+      // 万が一、要素が見つからない場合はプログラム的に作成
+      console.warn('オーディオ要素が見つかりません。動的に作成します。');
+      timerAudio = new Audio('timer10.mp3');
+    }
+    
+    // 音量を最大化
+    timerAudio.volume = 1.0;
+    
+    // タイマー音の読み込みを促進
+    timerAudio.load();
+    
+    // Androidの音声再生を初期化するために無音で一度再生しておく
+    const originalVolume = timerAudio.volume;
+    timerAudio.volume = 0.0001; // ほぼ無音
+    
+    // 無音再生と停止
+    const silentPlay = timerAudio.play();
+    
+    if (silentPlay !== undefined) {
+      silentPlay
+        .then(() => {
+          // 少し後に停止して元の音量に戻す
+          setTimeout(() => {
+            timerAudio.pause();
+            timerAudio.currentTime = 0;
+            timerAudio.volume = originalVolume;
+            audioInitialized = true;
+            console.log('オーディオシステムが正常に初期化されました');
+          }, 50);
+        })
+        .catch(error => {
+          console.warn('オーディオの初期化に失敗しました:ユーザー操作が必要です', error);
+          timerAudio.volume = originalVolume;
+          // ユーザー操作後に初期化されるので、ここでは失敗しても問題ない
+        });
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('オーディオ初期化中にエラーが発生しました:', error);
+    return false;
+  }
+}
+
+// Android向けに最適化された音声再生関数
+function playAlarmSound() {
+  return new Promise((resolve) => {
+    try {
+      // 初期化がまだなら再試行
+      if (!audioInitialized) {
+        initAudio();
+      }
+      
+      // オーディオ要素の確認
+      if (!timerAudio) {
+        console.error('オーディオ要素が利用できません');
+        resolve(false);
+        return;
+      }
+      
+      // 現在再生中なら停止
+      timerAudio.pause();
+      timerAudio.currentTime = 0;
+      
+      // 音量を最大化
+      timerAudio.volume = 1.0;
+      
+      // 再生開始
+      const playPromise = timerAudio.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('アラーム音声の再生を開始しました');
+            resolve(true);
+          })
+          .catch(error => {
+            console.error('アラーム音声の再生中にエラーが発生しました:', error);
+            resolve(false);
+          });
+      } else {
+        // 古いブラウザでPromiseを返さない場合
+        resolve(true); 
+      }
+    } catch (error) {
+      console.error('アラーム音声の再生試行中に例外が発生しました:', error);
+      resolve(false);
+    }
+  });
+}
+
 // タッチイベントの追加
 renderer.domElement.addEventListener('click', function() {
   if (!countdownActive) {
+    // タイマー開始時にオーディオを初期化（Android向け最適化）
+    initAudio();
+    
     countdownActive = true;
     lastCountdownUpdate = Date.now();
+    hasPlayedSound = false; // 音声再生フラグをリセット
     // 1秒間点滅させる
     let blinkCount = 0;
     const initialBlinkInterval = setInterval(() => {
@@ -447,6 +558,25 @@ function updateCountdown() {
     if (countdownSeconds <= 0) {
       countdownSeconds = 0;
       countdownActive = false;
+      
+      // タイマーが0になったら音声を一度だけ再生
+      if (!hasPlayedSound) {
+        // Android向けに最適化された音声再生関数を使用
+        playAlarmSound().then(success => {
+          if (success) {
+            console.log('タイマーアラームが鳴りました');
+          } else {
+            console.warn('タイマーアラームの再生に問題がありました');
+            // バックアップ再生方法を試行
+            if (timerAudio) {
+              timerAudio.currentTime = 0;
+              timerAudio.volume = 1.0;
+              timerAudio.play().catch(e => console.error('バックアップ再生にも失敗:', e));
+            }
+          }
+          hasPlayedSound = true;
+        });
+      }
     }
     
     // 時間表示を更新
@@ -469,4 +599,10 @@ window.addEventListener('resize', function() {
   renderer.setSize(width, height);
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
+});
+
+// ページ読み込み時のオーディオ初期化試行
+document.addEventListener('DOMContentLoaded', function() {
+  // ページ読み込み時に初期化試行（Android向け）
+  initAudio();
 });
