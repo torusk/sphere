@@ -421,6 +421,157 @@ let timerAudio = null;
 let audioInitialized = false;
 let hasPlayedSound = false;
 
+// Androidスリープ防止用変数
+let wakeLock = null;
+let isWakeLockSupported = false;
+
+// スリープ防止機能の確認と初期化
+function checkWakeLockSupport() {
+  if ('wakeLock' in navigator) {
+    isWakeLockSupported = true;
+    console.log('スリープ防止機能がサポートされています');
+  } else {
+    isWakeLockSupported = false;
+    console.log('スリープ防止機能はサポートされていません。代替手段を使用します。');
+  }
+}
+
+// スリープ防止機能を有効化
+async function acquireWakeLock() {
+  if (isWakeLockSupported) {
+    try {
+      // 既存のWakeLockがあれば解放
+      if (wakeLock) {
+        wakeLock.release();
+        wakeLock = null;
+      }
+      
+      // 新しいWakeLockを取得
+      wakeLock = await navigator.wakeLock.request('screen');
+      console.log('スリープ防止が有効化されました');
+      
+      // スリープ防止が解除された場合のハンドラ
+      wakeLock.addEventListener('release', () => {
+        console.log('スリープ防止が解除されました');
+        
+        // タイマー中なら自動的に再取得を試みる
+        if (countdownActive) {
+          setTimeout(() => acquireWakeLock(), 1000);
+        }
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('スリープ防止の取得に失敗しました:', error);
+      return false;
+    }
+  } else {
+    // 代替手段：ダミーアニメーションの使用
+    startNoSleepAnimation();
+    return true;
+  }
+}
+
+// スリープ防止を解除
+async function releaseWakeLock() {
+  if (isWakeLockSupported && wakeLock) {
+    try {
+      await wakeLock.release();
+      wakeLock = null;
+      console.log('スリープ防止が解除されました');
+      return true;
+    } catch (error) {
+      console.error('スリープ防止の解除に失敗しました:', error);
+      return false;
+    }
+  } else {
+    // 代替手段の停止
+    stopNoSleepAnimation();
+    return true;
+  }
+}
+
+// WakeLock APIが利用できない場合の代替手段
+// 目に見えない細かなアニメーションでスマホを起きた状態に保つ
+let noSleepTimer = null;
+let noSleepVideo = null;
+
+// スリープ防止用のダミーアニメーション開始
+function startNoSleepAnimation() {
+  // 既存のタイマーがあれば解除
+  if (noSleepTimer) {
+    clearInterval(noSleepTimer);
+  }
+  
+  // 既存のダミービデオがあれば削除
+  if (noSleepVideo) {
+    noSleepVideo.pause();
+    document.body.removeChild(noSleepVideo);
+  }
+  
+  // 目に見えないビデオ要素を作成し再生
+  try {
+    noSleepVideo = document.createElement('video');
+    noSleepVideo.setAttribute('playsinline', '');
+    noSleepVideo.setAttribute('muted', '');
+    noSleepVideo.setAttribute('loop', '');
+    noSleepVideo.style.width = '1px';
+    noSleepVideo.style.height = '1px';
+    noSleepVideo.style.position = 'absolute';
+    noSleepVideo.style.opacity = '0.01'; // 完全に透明ではなく傾けておく
+    document.body.appendChild(noSleepVideo);
+    
+    // 空のソース（動作しない場合もある）
+    noSleepVideo.src = 'data:video/mp4;base64,AAAAIGZ0eXBtcDQyAAAAAG1wNDJtcDQxaXNvbWF2YzEAAATKbW9vdgAAAGxtdmhkAAAAANLEP5XSxD+VAAB1MAAAdU4AAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAACFpb2RzAAAAABCAgIAQAE////9//w6AgIAEAAAAAQAABDV0cmFrAAAAXHRraGQAAAAH0sQ/ldLEP5UAAAABAAAAAAAAdU4AAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAALAAAACQAAAAAAAkZlc2QAAAASZWxzdAAAAAAAAAABAAABdTgAABdWAAEAAAAABBhtZGlhAAAAIG1kaGQAAAAA0sQ/ldLEP5UAAH3MAAB9zAA0aCQAAAAQAAAAEAAAAAAAAAAAAAAAIAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAALAAAACQAAAAAAAkZlc2QAAAASZWxzdAAAAAAAAAABAAABfcwAABdWAAEAAAAABBhtZGlhAAAAIG1kaGQAAAAA0sQ/ldLEP5UAAH3MAAB9zAA0aCQAAAAQAAAAEAAAAAAAAAAAAAAAIAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAALAAAACQAAAAAAAkZlc2QAAAASZWxzdAAAAAAAAAABAAABfcwAABdWAAEAAAAABBhtZGlhAAAAIG1kaGQAAAAA0sQ/ldLEP5UAAH3MAAB9zAA0aCQAAAAQAAAAEAAAAAAAAAAAAAAAIAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAALAAAACQAAAAAAAkZlc2QAAAASZWxzdAAAAAAAAAABAAABfcwAABdWAAEAAAAABBhtZGlhAAAAIG1kaGQAAAAA0sQ/ldLEP5UAAH3MAAB9zAA0aCQAAAAQAAAAEAAAAAAAAAAAAAAAIAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAALAAAACQAAAAAAAkZlc2QAAAASZWxzdAAAAAAAAAABAAABfcwAABdWAAEAAAAABJhtZGlhAAAAIG1kaGQAAAAA0sQ/ldLEP5UAAH3MAAB9zAA0aCQAAAAQAAAAEAAAAAAAAAAAAAAAIAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAALAAAACQAAAAAAAkZlc2QAAAASZWxzdAAAAAAAAAABAAABfcwAABdWAAEAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJ1dHJhawAAAFx0a2hkAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAALAAAACQAAAAAAAJGVzZHMAAAAAEICAIAcAT////v9AAgICAAQ';    
+    
+    // ビデオ再生
+    const playPromise = noSleepVideo.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(error => {
+        console.error('ダミービデオ再生に失敗しました:', error);
+      });
+    }
+    
+    // 定期的に要素を微妙に動かしてスマホにアニメーションがあることを知らせる
+    let positionVal = 0.01;
+    noSleepTimer = setInterval(() => {
+      positionVal = positionVal > 0.1 ? 0.01 : positionVal + 0.01;
+      if (noSleepVideo) {
+        noSleepVideo.style.opacity = positionVal.toString();
+      }
+    }, 30000); // 30秒ごとに変化
+  } catch (e) {
+    console.error('ダミーアニメーション作成中にエラー:', e);
+  }
+}
+
+// スリープ防止用のダミーアニメーション停止
+function stopNoSleepAnimation() {
+  if (noSleepTimer) {
+    clearInterval(noSleepTimer);
+    noSleepTimer = null;
+  }
+  if (noSleepVideo) {
+    noSleepVideo.pause();
+    try {
+      document.body.removeChild(noSleepVideo);
+    } catch (e) {
+      // 要素が既に削除されている可能性があるため、エラーを無視
+    }
+    noSleepVideo = null;
+  }
+}
+
+// ページが表示状態に戻ったときにスリープ防止を再取得
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && countdownActive) {
+    // タイマー中でページが表示されたら再取得
+    if (isWakeLockSupported && !wakeLock) {
+      acquireWakeLock();
+    }
+  }
+});
+
 // Android向け音声再生機能
 
 // オーディオの初期化
@@ -529,6 +680,9 @@ renderer.domElement.addEventListener('click', function() {
     // タイマー開始時にオーディオを初期化（Android向け最適化）
     initAudio();
     
+    // スリープ防止を有効化
+    acquireWakeLock();
+    
     countdownActive = true;
     lastCountdownUpdate = Date.now();
     hasPlayedSound = false; // 音声再生フラグをリセット
@@ -558,6 +712,9 @@ function updateCountdown() {
     if (countdownSeconds <= 0) {
       countdownSeconds = 0;
       countdownActive = false;
+      
+      // スリープ防止を解除
+      releaseWakeLock();
       
       // タイマーが0になったら音声を一度だけ再生
       if (!hasPlayedSound) {
@@ -601,8 +758,11 @@ window.addEventListener('resize', function() {
   camera.updateProjectionMatrix();
 });
 
-// ページ読み込み時のオーディオ初期化試行
+// ページ読み込み時の初期化処理
 document.addEventListener('DOMContentLoaded', function() {
-  // ページ読み込み時に初期化試行（Android向け）
+  // オーディオ初期化試行（Android向け）
   initAudio();
+  
+  // スリープ防止機能の確認
+  checkWakeLockSupport();
 });
