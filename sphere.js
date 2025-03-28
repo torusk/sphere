@@ -43,11 +43,11 @@ scene.add(backLight);
 function createFog() {
   const fogGeometry = new THREE.SphereGeometry(1.36, 24, 24); // 球体のを80%サイズに合わせて内部の霧も小さく調整 (1.7 * 0.8 = 1.36)
   const fogMaterial = new THREE.MeshStandardMaterial({
-    color: 0x1E90FF,     // 淡い青色(ドドジャーブルー)
+    color: 0xFFFFFF,     // 白色の内部発光
     transparent: true,
-    opacity: 0.25,
-    emissive: 0x1E90FF,  // 発光色も同じ青色
-    emissiveIntensity: 0.15,
+    opacity: 0.15,        // より透明に
+    emissive: 0xFFFFFF,  // 白色の発光
+    emissiveIntensity: 0.6, // 発光強度を上げる
     side: THREE.DoubleSide
   });
   
@@ -61,18 +61,19 @@ function createCrystalBall() {
   // 基本的なジオメトリとマテリアル
   const geometry = new THREE.SphereGeometry(1.6, 128, 128); // 球体のサイズを80%に縮小（2.0 * 0.8 = 1.6）
   
-  // クリスタルボール風のマテリアル
+  // クリスタルボール風のマテリアル - メタリックシルバー
   const material = new THREE.MeshPhysicalMaterial({
-    color: 0x00BFFF,       // より明るい青色 (ディープスカイブルー)
-    metalness: 0.2,        // 金属感はそのまま
-    roughness: 0.1,        // なめらかな表面
-    transmission: 0.95,    // 透過率が高い
+    color: 0xC0C0C0,       // シルバーカラー
+    metalness: 0.9,        // 高い金属感
+    roughness: 0.05,       // 非常になめらかな表面
+    transmission: 0.8,     // 透過率を調整
     transparent: true,     // 透過を有効化
-    ior: 1.4,             // 屈折率
-    thickness: 0.8,        // 厚み
-    envMapIntensity: 1.6,  // 環境マップの強調
+    ior: 2.0,             // 高い屈折率
+    thickness: 0.5,        // 厚み
+    envMapIntensity: 2.0,  // 環境マップの強調を上げる
     clearcoat: 1.0,        // クリアコート効果
-    clearcoatRoughness: 0.05 // クリアコートの滑らかさ
+    clearcoatRoughness: 0.02, // より滑らかなクリアコート
+    reflectivity: 1.0,     // 反射率を上げる
   });
 
   // 球体メッシュの作成
@@ -90,6 +91,24 @@ const crystalBall = createCrystalBall();
 
 // 内部の霧を作成
 const innerFog = createFog();
+
+// エッジライトを作成
+function createEdgeLight() {
+  // エッジライト用のリング形状
+  const edgeGeometry = new THREE.TorusGeometry(1.61, 0.02, 30, 100);
+  const edgeMaterial = new THREE.MeshBasicMaterial({ 
+    color: 0xFFFFFF,
+    transparent: true,
+    opacity: 0.8
+  });
+  
+  const edgeLight = new THREE.Mesh(edgeGeometry, edgeMaterial);
+  scene.add(edgeLight);
+  return edgeLight;
+}
+
+// エッジライトのインスタンス作成
+const edgeLight = createEdgeLight();
 
 // カメラ位置の設定
 camera.position.z = 6;
@@ -320,6 +339,17 @@ function animate() {
   const time = Date.now() * 0.001; // 現在時刻を秒単位で取得
   crystalBall.position.y = Math.sin(time * 0.3) * 0.3; // よりゆっくりと大きく上下に浮遊
   innerFog.position.y = crystalBall.position.y; // 内部の霧も一緒に動かす
+  edgeLight.position.y = crystalBall.position.y; // エッジライトも一緒に動かす
+  
+  // エッジライトの色と不透明度を脱色させて点滅させる
+  const pulseValue = (Math.sin(time * 2) + 1) / 2; // 0から1の値
+  edgeLight.material.opacity = 0.5 + pulseValue * 0.5; // 0.5から1.0のあいだで変化
+  edgeLight.material.color.setHSL(pulseValue * 0.1, 0.5, 0.7); // 色相を微妙に変化
+  
+  // エッジライトの回転を球体と同期させる
+  edgeLight.rotation.x = crystalBall.rotation.x;
+  edgeLight.rotation.y = crystalBall.rotation.y;
+  edgeLight.rotation.z = crystalBall.rotation.z;
   
   // カウントダウン中なら点滅、そうでなければ通常表示
   if (countdownActive) {
