@@ -9,12 +9,12 @@ let countdownSeconds = 15 * 60; // 15分 = 900秒
 let lastCountdownUpdate = 0; // 最後にカウントダウンを更新した時間
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0xffffff, 0); // 背景を透明に設定
+renderer.setClearColor(0x000000, 0); // 背景を完全に透明に
 
-// 影の設定は無効化
 document.body.appendChild(renderer.domElement);
+renderer.domElement.id = 'sphere-canvas';
 
 // 環境マップの生成
 // HDキュビック環境マップの生成
@@ -43,10 +43,10 @@ scene.add(backLight);
 function createFog() {
   const fogGeometry = new THREE.SphereGeometry(1.36, 24, 24); // 球体のを80%サイズに合わせて内部の霧も小さく調整 (1.7 * 0.8 = 1.36)
   const fogMaterial = new THREE.MeshStandardMaterial({
-    color: 0x9ACD32,     // 黄緑色の霧
+    color: 0x1E90FF,     // 淡い青色(ドドジャーブルー)
     transparent: true,
     opacity: 0.25,
-    emissive: 0x9ACD32,  // 発光色も同じ黄緑色
+    emissive: 0x1E90FF,  // 発光色も同じ青色
     emissiveIntensity: 0.15,
     side: THREE.DoubleSide
   });
@@ -63,7 +63,7 @@ function createCrystalBall() {
   
   // クリスタルボール風のマテリアル
   const material = new THREE.MeshPhysicalMaterial({
-    color: 0x7FFF00,       // よりはっきりした明るい黄緑色　チャートリューズ
+    color: 0x00BFFF,       // より明るい青色 (ディープスカイブルー)
     metalness: 0.2,        // 金属感はそのまま
     roughness: 0.1,        // なめらかな表面
     transmission: 0.95,    // 透過率が高い
