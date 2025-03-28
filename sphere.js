@@ -11,7 +11,7 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0xffffff); // 白い背景色
+renderer.setClearColor(0xffffff, 0); // 背景を透明に設定
 
 // 影の設定は無効化
 document.body.appendChild(renderer.domElement);
@@ -41,12 +41,12 @@ scene.add(backLight);
 
 // クリスタルボールの内部に霧/綿を追加
 function createFog() {
-  const fogGeometry = new THREE.SphereGeometry(1.7, 24, 24);
+  const fogGeometry = new THREE.SphereGeometry(1.36, 24, 24); // 球体のを80%サイズに合わせて内部の霧も小さく調整 (1.7 * 0.8 = 1.36)
   const fogMaterial = new THREE.MeshStandardMaterial({
-    color: 0xADD8E6,     // 薄いスカイブルーの霧
+    color: 0x9ACD32,     // 黄緑色の霧
     transparent: true,
     opacity: 0.25,
-    emissive: 0xADD8E6,  // 微妙な発光
+    emissive: 0x9ACD32,  // 発光色も同じ黄緑色
     emissiveIntensity: 0.15,
     side: THREE.DoubleSide
   });
@@ -59,20 +59,20 @@ function createFog() {
 // クリスタルボールの作成
 function createCrystalBall() {
   // 基本的なジオメトリとマテリアル
-  const geometry = new THREE.SphereGeometry(2, 128, 128); // 非常に高いポリゴン数で完璧な球体を表現
+  const geometry = new THREE.SphereGeometry(1.6, 128, 128); // 球体のサイズを80%に縮小（2.0 * 0.8 = 1.6）
   
   // クリスタルボール風のマテリアル
   const material = new THREE.MeshPhysicalMaterial({
-    color: 0x87CEEB,       // より明るいスカイブルー
-    metalness: 0.2,        // 少し金属感を下げる
-    roughness: 0.1,        // よりなめらかな表面
+    color: 0x7FFF00,       // よりはっきりした明るい黄緑色　チャートリューズ
+    metalness: 0.2,        // 金属感はそのまま
+    roughness: 0.1,        // なめらかな表面
     transmission: 0.95,    // 透過率が高い
     transparent: true,     // 透過を有効化
-    ior: 1.4,             // 少し低めの屈折率
-    thickness: 0.8,        // 少し薄めの厚み
-    envMapIntensity: 1.6,  // 環境マップの強調を上げる
+    ior: 1.4,             // 屈折率
+    thickness: 0.8,        // 厚み
+    envMapIntensity: 1.6,  // 環境マップの強調
     clearcoat: 1.0,        // クリアコート効果
-    clearcoatRoughness: 0.05 // より滑らかなクリアコート
+    clearcoatRoughness: 0.05 // クリアコートの滑らかさ
   });
 
   // 球体メッシュの作成
@@ -197,8 +197,8 @@ function createTimerDisplay() {
   const geometry = new THREE.PlaneGeometry(1.8, 0.9);
   const mesh = new THREE.Mesh(geometry, material);
   
-  // 球体の表面に配置（半径2の球体の表面）
-  mesh.position.z = 1.99;
+  // 球体の表面に配置（球体の半径が1.6なので、表面は1.59付近に配置）
+  mesh.position.z = 1.59;
   
   scene.add(mesh);
   return { mesh, canvas, context };
