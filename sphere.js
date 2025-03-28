@@ -30,14 +30,27 @@ directionalLight.position.set(1, 1, 1);
 
 scene.add(directionalLight);
 
-// 弱い環境光
-const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
-scene.add(ambientLight);
+// 強い環境光を追加
+// 複数の方向からの光源で球体の反射が編あるように
+const hemisphereLight = new THREE.HemisphereLight(0xFFFFFF, 0x404040, 1.0);
+scene.add(hemisphereLight);
 
-// 背面からの光源を追加して、回転時に輪郭が見えるようにする
-const backLight = new THREE.DirectionalLight(0xffffff, 0.7);
-backLight.position.set(-1, 0.5, -2);
-scene.add(backLight);
+// 正面からの強い光源
+const frontLight = new THREE.DirectionalLight(0xFFFFFF, 2.0);
+frontLight.position.set(0, 0, 5);
+scene.add(frontLight);
+
+// 左上からのスポット光源
+const spotLight1 = new THREE.SpotLight(0xFFFFFF, 1.0);
+spotLight1.position.set(-5, 5, 2);
+spotLight1.angle = Math.PI / 6;
+scene.add(spotLight1);
+
+// 右上からのスポット光源
+const spotLight2 = new THREE.SpotLight(0xFFFFFF, 1.0);
+spotLight2.position.set(5, 5, 2);
+spotLight2.angle = Math.PI / 6;
+scene.add(spotLight2);
 
 // クリスタルボールの内部に霧/綿を追加
 function createFog() {
@@ -45,9 +58,9 @@ function createFog() {
   const fogMaterial = new THREE.MeshStandardMaterial({
     color: 0xFFFFFF,     // 白色の内部発光
     transparent: true,
-    opacity: 0.15,        // より透明に
+    opacity: 0.2,        // より透明に調整
     emissive: 0xFFFFFF,  // 白色の発光
-    emissiveIntensity: 0.6, // 発光強度を上げる
+    emissiveIntensity: 0.8, // 発光強度をさらに上げる
     side: THREE.DoubleSide
   });
   
@@ -63,17 +76,19 @@ function createCrystalBall() {
   
   // クリスタルボール風のマテリアル - メタリックシルバー
   const material = new THREE.MeshPhysicalMaterial({
-    color: 0xC0C0C0,       // シルバーカラー
-    metalness: 0.9,        // 高い金属感
-    roughness: 0.05,       // 非常になめらかな表面
-    transmission: 0.8,     // 透過率を調整
+    color: 0xE0E0E0,       // より明るいシルバーカラー
+    metalness: 0.8,        // 高い金属感を維持しつつも微調整
+    roughness: 0.1,        // 表面の滑らかさを微調整
+    transmission: 0.2,     // 透過率を下げて金属感を強調
     transparent: true,     // 透過を有効化
-    ior: 2.0,             // 高い屈折率
+    ior: 1.8,             // 屈折率
     thickness: 0.5,        // 厚み
-    envMapIntensity: 2.0,  // 環境マップの強調を上げる
+    envMapIntensity: 3.0,  // 環境マップの強調をさらに上げる
     clearcoat: 1.0,        // クリアコート効果
-    clearcoatRoughness: 0.02, // より滑らかなクリアコート
+    clearcoatRoughness: 0.03, // より滑らかなクリアコート
     reflectivity: 1.0,     // 反射率を上げる
+    emissive: 0x333333,    // 微妙な発光を追加
+    emissiveIntensity: 0.2 // 発光の強さ
   });
 
   // 球体メッシュの作成
@@ -95,14 +110,26 @@ const innerFog = createFog();
 // エッジライトを作成
 function createEdgeLight() {
   // エッジライト用のリング形状
-  const edgeGeometry = new THREE.TorusGeometry(1.61, 0.02, 30, 100);
+  const edgeGeometry = new THREE.TorusGeometry(1.61, 0.03, 30, 100); // より太いリング
   const edgeMaterial = new THREE.MeshBasicMaterial({ 
     color: 0xFFFFFF,
     transparent: true,
-    opacity: 0.8
+    opacity: 0.9 // より不透明度を高く
   });
   
   const edgeLight = new THREE.Mesh(edgeGeometry, edgeMaterial);
+  
+  // さらに外側にグローエフェクト用の円を追加
+  const glowGeometry = new THREE.TorusGeometry(1.61, 0.08, 30, 100);
+  const glowMaterial = new THREE.MeshBasicMaterial({ 
+    color: 0xFFFFFF,
+    transparent: true,
+    opacity: 0.5
+  });
+  
+  const glowRing = new THREE.Mesh(glowGeometry, glowMaterial);
+  edgeLight.add(glowRing); // エッジライトの子要素として追加
+  
   scene.add(edgeLight);
   return edgeLight;
 }
