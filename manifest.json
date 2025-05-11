@@ -1,24 +1,25 @@
 {
-  "name": "sphere Timer",
-  "short_name": "sphere",
-  "description": "黒い球体タイマー",
+  "name": "ポモドーロタイマー",
+  "short_name": "ポモドーロ",
+  "description": "集中と休憩をサポートするポモドーロタイマーです。",
+  "id": "/?app=pomodoro-timer-sphere",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "sphere.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "sphere.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
-  ],
-  "orientation": "portrait"
+  ]
 }
