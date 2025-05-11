@@ -243,7 +243,7 @@ function createTimerDisplay() {
   };
 
   // デジタル時計の描画
-  const timeString = "15:00";
+  const timeString = "25:00";
   const digitWidth = 60; // 50% 大きくした幅
   const digitHeight = 120; // 50% 大きくした高さ
   const spacing = 20; // 数字間のスペース
