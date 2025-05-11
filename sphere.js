@@ -1,6 +1,7 @@
 // 魅惑的なクリスタルボールを実装するTHREE.jsコード
 
 // シーンの初期化
+const scene = new THREE.Scene();
 let timerMesh; // タイマー表示用のメッシュ
 let timerVisible = true; // タイマーの表示/非表示状態
 let lastBlinkTime = 0; // 最後に点滅した時間
